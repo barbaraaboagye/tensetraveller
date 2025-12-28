@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chrono Quest | Je Parle English</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Fonts for Different Eras -->
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Courier+Prime:wght@400;700&family=Inter:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        /* TRANSITIONS & BASE */
+        body { transition: all 1s ease; overflow-x: hidden; min-height: 100vh; }
+        .ui-panel { transition: all 0.5s ease; }
+        .btn-option { transition: all 0.2s; }
+        
+        /* ================= THEMES (THE TIME MACHINE) ================= */
+
+        /* 1. PAST ERA (Steampunk/Sepia) */
+        body.theme-past {
+            background-color: #3e2723;
+            background-image: url("https://www.transparenttextures.com/patterns/aged-paper.png");
+            font-family: 'Courier Prime', monospace;
+            color: #efebe9;
+        }
+        .theme-past .ui-panel {
+            background: #5d4037; border: 4px double #d7ccc8;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.3);
+        }
+        .theme-past .btn-option {
+            background: #8d6e63; color: #fff; border: 2px solid #d7ccc8;
+            font-family: 'Courier Prime', monospace;
+        }
+        .theme-past .btn-option:hover { background: #a1887f; transform: translateY(-2px); }
+        .theme-past .accent-text { color: #ffcc80; }
+        .theme-past .icon-era { content: "\f013"; } 
+
+        /* 2. PRESENT ERA (Modern/Clean) */
+        body.theme-present {
+            background-color: #eceff1;
+            font-family: 'Inter', sans-serif;
+            color: #263238;
+        }
+        .theme-present .ui-panel {
+            background: #ffffff; border: 1px solid #cfd8dc;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        .theme-present .btn-option {
+            background: #2196f3; color: #fff; border-radius: 8px;
+            font-weight: bold; border: none;
+        }
+        .theme-present .btn-option:hover { background: #1976d2; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(33,150,243,0.3); }
+        .theme-present .accent-text { color: #0288d1; }
+
+        /* 3. FUTURE ERA (Sci-Fi/Neon) */
+        body.theme-future {
+            background-color: #050505;
+            background-image: linear-gradient(0deg, transparent 24%, rgba(0, 255, 255, .05) 25%, rgba(0, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 255, .05) 75%, rgba(0, 255, 255, .05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0, 255, 255, .05) 25%, rgba(0, 255, 255, .05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 255, .05) 75%, rgba(0, 255, 255, .05) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            font-family: 'Audiowide', cursive;
+            color: #00e5ff;
+        }
+        .theme-future .ui-panel {
+            background: rgba(0, 20, 40, 0.9); border: 2px solid #00e5ff;
+            box-shadow: 0 0 20px #00e5ff, inset 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+        .theme-future .btn-option {
+            background: transparent; color: #00e5ff; border: 1px solid #00e5ff;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .theme-future .btn-option:hover { background: #00e5ff; color: #000; box-shadow: 0 0 15px #00e5ff; }
+        .theme-future .accent-text { color: #d500f9; text-shadow: 0 0 5px #d500f9; }
+
+        /* ANIMATIONS */
+        .time-jump-overlay {
+            position: fixed; inset: 0; background: white; z-index: 100;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+        }
+        .time-jump-overlay.active { opacity: 1; }
+
+    </style>
+</head>
+<body class="theme-present flex flex-col items-center justify-center p-4">
+
+    <!-- Flash Effect for Time Travel -->
+    <div id="flashOverlay" class="time-jump-overlay"></div>
+
+    <!-- HEADER / HUD -->
+    <header class="w-full max-w-4xl flex flex-col md:flex-row justify-between items-center mb-4 md:mb-8 ui-panel p-4 rounded-xl relative z-10 gap-4">
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            <div id="eraIcon" class="text-4xl accent-text"><i class="fa-solid fa-clock"></i></div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold uppercase tracking-widest">Chrono Quest</h1>
+                <div class="text-xs opacity-70">STATUS: <span id="eraLabel" class="accent-text font-bold">PRESENT DAY</span></div>
+            </div>
+        </div>
+        
+        <!-- Timeline Progress -->
+        <div class="hidden md:flex flex-col w-1/3">
+            <div class="flex justify-between text-[10px] uppercase mb-1 font-bold">
+                <span>Past</span><span>Present</span><span>Future</span>
+            </div>
+            <div class="h-3 w-full bg-gray-700 rounded-full overflow-hidden relative">
+                <div id="timelineMarker" class="absolute top-0 bottom-0 w-2 bg-white shadow-[0_0_10px_white] transition-all duration-1000" style="left: 50%;"></div>
+            </div>
+        </div>
+
+        <div class="flex gap-6 text-right">
+            <div>
+                <div class="text-xs uppercase opacity-70">Time</div>
+                <div class="text-xl font-bold accent-text font-mono" id="timerDisplay">00:00</div>
+            </div>
+            <div>
+                <div class="text-xs uppercase opacity-70">Score</div>
+                <div class="text-xl font-bold accent-text" id="scoreDisplay">0</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- GAME CONTAINER -->
+    <main class="w-full max-w-2xl relative z-10">
+        
+        <!-- INTRO SCREEN -->
+        <div id="startScreen" class="ui-panel p-8 text-center rounded-2xl">
+            <div class="text-6xl mb-6 accent-text animate-pulse"><i class="fa-solid fa-timeline"></i></div>
+            <h2 class="text-3xl font-bold mb-4">TIME REPAIR AGENCY</h2>
+            <p class="mb-8 opacity-80 text-lg">Agent, the timeline is corrupted. <br>Travel through 50 eras and fix the broken verbs.</p>
+            
+            <div class="grid grid-cols-3 gap-2 mb-8 text-xs font-bold opacity-60">
+                <div class="p-2 border border-current rounded">PAST</div>
+                <div class="p-2 border border-current rounded">PRESENT</div>
+                <div class="p-2 border border-current rounded">FUTURE</div>
+            </div>
+
+            <button onclick="game.start()" class="btn-option w-full py-4 text-xl uppercase tracking-widest">
+                Initialize Mission
+            </button>
+        </div>
+
+        <!-- QUESTION SCREEN -->
+        <div id="gameScreen" class="hidden">
+            <div class="ui-panel p-8 rounded-2xl relative">
+                <!-- Progress Badge -->
+                <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-black text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg border border-white/20">
+                    Fix: <span id="qCount">1</span> / 50
+                </div>
+
+                <div class="text-center mt-2 mb-4">
+                     <span id="currentEraBadge" class="text-[10px] uppercase tracking-widest font-bold opacity-60 border border-current px-2 py-1 rounded">Target: Present</span>
+                </div>
+
+                <!-- The Glitch Sentence -->
+                <div class="my-6 text-center">
+                    <p class="text-2xl md:text-3xl font-bold leading-relaxed" id="questionText">
+                        Loading...
+                    </p>
+                </div>
+
+                <!-- Options Grid -->
+                <div id="optionsGrid" class="grid grid-cols-1 gap-4">
+                    <!-- Buttons Injected Here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- FEEDBACK MODAL -->
+        <div id="feedbackScreen" class="hidden absolute inset-0 z-20 flex items-center justify-center backdrop-blur-sm bg-black/50">
+            <div class="ui-panel p-6 rounded-xl text-center shadow-2xl max-w-sm w-full border-4 border-current">
+                <div id="feedbackIcon" class="text-5xl mb-4"></div>
+                <h3 id="feedbackTitle" class="text-2xl font-bold mb-2"></h3>
+                <p id="feedbackMsg" class="mb-6 opacity-80 text-sm"></p>
+                <button onclick="game.nextQuestion()" class="btn-option w-full py-3">CONTINUE</button>
+            </div>
+        </div>
+
+        <!-- MISSION REPORT (END SCREEN) -->
+        <div id="endScreen" class="hidden">
+            <div class="ui-panel p-8 text-center rounded-2xl max-h-[90vh] overflow-y-auto">
+                <div class="text-6xl mb-4 accent-text"><i class="fa-solid fa-flag-checkered"></i></div>
+                <h2 class="text-4xl font-bold mb-2">MISSION COMPLETE</h2>
+                <p class="mb-8 opacity-70">Timeline Stabilization Report</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="p-4 border border-current rounded bg-black/10">
+                        <div class="text-xs uppercase opacity-70">Final Score</div>
+                        <div class="text-4xl font-bold accent-text" id="endScore">0 / 100</div>
+                    </div>
+                    <div class="p-4 border border-current rounded bg-black/10">
+                        <div class="text-xs uppercase opacity-70">Total Time</div>
+                        <div class="text-4xl font-bold accent-text font-mono" id="endTime">00:00</div>
+                    </div>
+                </div>
+
+                <!-- RANK DISPLAY -->
+                <div class="mb-4 p-4 bg-white/5 rounded border border-white/20">
+                    <div class="text-xs uppercase opacity-50 mb-1">Agent Rank</div>
+                    <div class="text-3xl font-bold mb-2" id="endRank">ROOKIE</div>
+                    <div class="text-sm opacity-80 italic" id="endRankDesc">...</div>
+                </div>
+
+                <!-- Mistakes Container -->
+                <div id="mistakesContainer" class="hidden text-left bg-black/5 p-4 rounded border border-current mb-8">
+                    <h3 class="font-bold border-b border-current pb-2 mb-4 uppercase text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation text-red-500"></i> Failed Fixes (Review Required)
+                    </h3>
+                    <ul id="mistakesList" class="text-sm space-y-4 max-h-60 overflow-y-auto pr-2">
+                        <!-- Filled by JS -->
+                    </ul>
+                </div>
+
+                <button onclick="location.reload()" class="btn-option w-full py-4 text-lg uppercase tracking-widest">
+                    NEW ASSIGNMENT
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="fixed bottom-0 w-full text-center p-2 text-[10px] opacity-50 font-bold z-0 pointer-events-none">
+        Je Parle English &copy; 2025 | Made with ❤️ for learners
+    </footer>
+
+    <script>
+        /* ================= AUDIO ENGINE ================= */
+        const sfx = {
+            ctx: null,
+            init: () => { if (!sfx.ctx) sfx.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play: (type) => {
+                if (!sfx.ctx) return;
+                const osc = sfx.ctx.createOscillator();
+                const gain = sfx.ctx.createGain();
+                osc.connect(gain); gain.connect(sfx.ctx.destination);
+                const now = sfx.ctx.currentTime;
+
+                if (type === 'warp') { 
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
+                } else if (type === 'correct') { 
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.setValueAtTime(1000, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'wrong') { 
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                }
+            }
+        };
+
+        /* ================= DATA BANK (50 Questions) ================= */
+        const questions = [
+            // PAST (17)
+            { era: "past", q: "Yesterday, I _____ a strange noise.", opts: ["hear", "heard", "hearing"], ans: 1, why: "Simple Past: Completed action." },
+            { era: "past", q: "I _____ TV when the phone rang.", opts: ["watched", "was watching", "am watching"], ans: 1, why: "Past Continuous: Interrupted action." },
+            { era: "past", q: "She _____ to Paris in 2010.", opts: ["go", "went", "gone"], ans: 1, why: "Simple Past: Specific time." },
+            { era: "past", q: "We _____ finished our work before noon.", opts: ["had", "have", "has"], ans: 0, why: "Past Perfect: Action before another past time." },
+            { era: "past", q: "They _____ play soccer when they were young.", opts: ["use to", "used to", "using to"], ans: 1, why: "Used To: Past habit." },
+            { era: "past", q: "He _____ the keys on the table an hour ago.", opts: ["put", "puts", "putting"], ans: 0, why: "Simple Past: Completed action." },
+            { era: "past", q: "While I _____ for the bus, it started to rain.", opts: ["wait", "waited", "was waiting"], ans: 2, why: "Past Continuous: Long action." },
+            { era: "past", q: "They _____ already left when I arrived.", opts: ["have", "had", "did"], ans: 1, why: "Past Perfect: Earlier past action." },
+            { era: "past", q: "I _____ see him yesterday.", opts: ["don't", "didn't", "wasn't"], ans: 1, why: "Simple Past Negative." },
+            { era: "past", q: "Where _____ you go last night?", opts: ["did", "do", "were"], ans: 0, why: "Simple Past Question." },
+            { era: "past", q: "The sun _____ shining when we woke up.", opts: ["is", "was", "were"], ans: 1, why: "Past Continuous setting the scene." },
+            { era: "past", q: "He _____ not happy with the result.", opts: ["was", "were", "did"], ans: 0, why: "Simple Past 'To Be'." },
+            { era: "past", q: "After she _____ eaten, she went to bed.", opts: ["has", "had", "was"], ans: 1, why: "Past Perfect." },
+            { era: "past", q: "We _____ friends for ten years before we lost touch.", opts: ["had been", "have been", "were being"], ans: 0, why: "Past Perfect Continuous." },
+            { era: "past", q: "I _____ understand what he said.", opts: ["didn't", "wasn't", "don't"], ans: 0, why: "Simple Past Negative." },
+            { era: "past", q: "When I was a child, I _____ vegetables.", opts: ["hate", "hated", "hating"], ans: 1, why: "Simple Past State." },
+            { era: "past", q: "The birds _____ singing in the trees.", opts: ["was", "were", "did"], ans: 1, why: "Past Continuous Plural." },
+
+            // PRESENT (16)
+            { era: "present", q: "Listen! Someone _____ the piano.", opts: ["plays", "played", "is playing"], ans: 2, why: "Present Continuous: Happening now." },
+            { era: "present", q: "Water _____ at 100 degrees Celsius.", opts: ["boils", "boiling", "boiled"], ans: 0, why: "Present Simple: Fact." },
+            { era: "present", q: "I _____ seen that movie already.", opts: ["have", "had", "did"], ans: 0, why: "Present Perfect: Past action, current relevance." },
+            { era: "present", q: "She _____ here for 5 years.", opts: ["works", "has worked", "is working"], ans: 1, why: "Present Perfect: Duration up to now." },
+            { era: "present", q: "We usually _____ coffee in the morning.", opts: ["drink", "drinking", "drank"], ans: 0, why: "Present Simple: Routine." },
+            { era: "present", q: "Look! The bus _____ .", opts: ["comes", "coming", "is coming"], ans: 2, why: "Present Continuous: Happening now." },
+            { era: "present", q: "He _____ like spicy food.", opts: ["don't", "doesn't", "isn't"], ans: 1, why: "Present Simple Negative." },
+            { era: "present", q: "_____ you speak English?", opts: ["Do", "Are", "Have"], ans: 0, why: "Present Simple Question." },
+            { era: "present", q: "I _____ never been to Japan.", opts: ["did", "has", "have"], ans: 2, why: "Present Perfect." },
+            { era: "present", q: "She _____ reading a book right now.", opts: ["is", "was", "does"], ans: 0, why: "Present Continuous." },
+            { era: "present", q: "They _____ live in London anymore.", opts: ["aren't", "don't", "doesn't"], ans: 1, why: "Present Simple Negative." },
+            { era: "present", q: "The earth _____ around the sun.", opts: ["goes", "going", "go"], ans: 0, why: "Present Simple: Fact." },
+            { era: "present", q: "We _____ just finished dinner.", opts: ["have", "did", "are"], ans: 0, why: "Present Perfect." },
+            { era: "present", q: "He _____ his keys. He can't find them.", opts: ["lost", "has lost", "loses"], ans: 1, why: "Present Perfect: Result in the present." },
+            { era: "present", q: "_____ she working today?", opts: ["Does", "Is", "Has"], ans: 1, why: "Present Continuous Question." },
+            { era: "present", q: "It _____ rain often here.", opts: ["don't", "doesn't", "isn't"], ans: 1, why: "Present Simple Negative." },
+
+            // FUTURE (17)
+            { era: "future", q: "I think it _____ rain tomorrow.", opts: ["will", "is going to", "wills"], ans: 0, why: "Future Simple: Prediction (opinion)." },
+            { era: "future", q: "Look at those clouds! It _____ rain.", opts: ["will", "is going to", "shall"], ans: 1, why: "Going To: Prediction (evidence)." },
+            { era: "future", q: "This time next week, I _____ on a beach.", opts: ["will lie", "will be lying", "am lying"], ans: 1, why: "Future Continuous: In progress at future time." },
+            { era: "future", q: "By 2030, we _____ Mars.", opts: ["will visit", "will have visited", "visiting"], ans: 1, why: "Future Perfect: Completed by future date." },
+            { era: "future", q: "The train _____ at 9 PM tonight.", opts: ["leaves", "will leave", "leaving"], ans: 0, why: "Present Simple: Schedule." },
+            { era: "future", q: "I _____ help you with your bags.", opts: ["will", "am going to", "want"], ans: 0, why: "Future Simple: Offer." },
+            { era: "future", q: "We _____ visit our grandma this weekend.", opts: ["will", "are going to", "go to"], ans: 1, why: "Going To: Plan." },
+            { era: "future", q: "Don't call me at 8. I _____ dinner.", opts: ["will have", "will be having", "have"], ans: 1, why: "Future Continuous." },
+            { era: "future", q: "In fifty years, people _____ under the sea.", opts: ["will live", "living", "are living"], ans: 0, why: "Future Simple: Prediction." },
+            { era: "future", q: "She _____ have finished the report by Friday.", opts: ["will", "is", "has"], ans: 0, why: "Future Perfect." },
+            { era: "future", q: "_____ you marry me?", opts: ["Will", "Do", "Are"], ans: 0, why: "Future Simple: Promise/Request." },
+            { era: "future", q: "Watch out! You _____ fall!", opts: ["will", "are going to", "shall"], ans: 1, why: "Going To: Immediate future." },
+            { era: "future", q: "I promise I _____ be late.", opts: ["won't", "don't", "not"], ans: 0, why: "Future Simple: Promise." },
+            { era: "future", q: "They _____ flying to New York tomorrow.", opts: ["will", "are", "do"], ans: 1, why: "Present Continuous: Future arrangement." },
+            { era: "future", q: "When I arrive, I _____ call you.", opts: ["will", "am going to", "would"], ans: 0, why: "Future Simple: Decision at moment of speaking." },
+            { era: "future", q: "The movie _____ starts at 8:00.", opts: ["will", "is", "starts"], ans: 2, why: "Present Simple: Schedule." },
+            { era: "future", q: "By the time we get there, the store _____ closed.", opts: ["will have", "will be", "is"], ans: 0, why: "Future Perfect." }
+        ];
+
+        /* ================= GAME ENGINE ================= */
+        const game = {
+            qIndex: 0,
+            score: 0,
+            currentEra: 'present',
+            timelinePos: 50,
+            startTime: 0,
+            timerInterval: null,
+            mistakes: [],
+            
+            start: () => {
+                sfx.init();
+                game.qIndex = 0;
+                game.score = 0;
+                game.timelinePos = 50;
+                game.mistakes = [];
+                
+                // Shuffle Questions
+                questions.sort(() => Math.random() - 0.5);
+
+                document.getElementById('startScreen').classList.add('hidden');
+                document.getElementById('endScreen').classList.add('hidden');
+                document.getElementById('gameScreen').classList.remove('hidden');
+                
+                // Start Timer
+                game.startTime = Date.now();
+                clearInterval(game.timerInterval);
+                game.timerInterval = setInterval(game.updateTimer, 1000);
+
+                game.loadQuestion();
+            },
+
+            updateTimer: () => {
+                const now = Date.now();
+                const diff = Math.floor((now - game.startTime) / 1000);
+                const min = Math.floor(diff / 60).toString().padStart(2, '0');
+                const sec = (diff % 60).toString().padStart(2, '0');
+                document.getElementById('timerDisplay').innerText = `${min}:${sec}`;
+            },
+
+            loadQuestion: () => {
+                // End game check
+                if (game.qIndex >= 50 || game.qIndex >= questions.length) {
+                    game.endGame();
+                    return;
+                }
+
+                const q = questions[game.qIndex];
+                
+                // 1. TRIGGER TIME JUMP
+                if (q.era !== game.currentEra) {
+                    game.triggerWarp(q.era);
+                }
+
+                // 2. Set Content
+                document.getElementById('questionText').innerHTML = q.q.replace('_____', '<span class="border-b-4 border-current opacity-50 px-4">?</span>');
+                document.getElementById('currentEraBadge').innerText = `TARGET: ${q.era.toUpperCase()}`;
+                document.getElementById('qCount').innerText = game.qIndex + 1;
+
+                // 3. Render Buttons
+                const grid = document.getElementById('optionsGrid');
+                grid.innerHTML = '';
+                
+                q.opts.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "btn-option w-full py-4 text-xl text-left px-6";
+                    btn.innerHTML = `<span class="opacity-50 mr-4">${String.fromCharCode(65+idx)}.</span> ${opt}`;
+                    btn.onclick = () => game.checkAnswer(idx, q);
+                    grid.appendChild(btn);
+                });
+            },
+
+            triggerWarp: (newEra) => {
+                sfx.play('warp');
+                const flash = document.getElementById('flashOverlay');
+                flash.classList.add('active');
+                
+                setTimeout(() => {
+                    document.body.className = `theme-${newEra} flex flex-col items-center justify-center p-4`;
+                    
+                    const labels = { past: "1885 - THE PAST", present: "2025 - PRESENT DAY", future: "3050 - THE FUTURE" };
+                    const icons = { past: '<i class="fa-solid fa-gear"></i>', present: '<i class="fa-solid fa-clock"></i>', future: '<i class="fa-solid fa-rocket"></i>' };
+                    
+                    document.getElementById('eraLabel').innerText = labels[newEra];
+                    document.getElementById('eraIcon').innerHTML = icons[newEra];
+                    
+                    const positions = { past: '15%', present: '50%', future: '85%' };
+                    document.getElementById('timelineMarker').style.left = positions[newEra];
+
+                    game.currentEra = newEra;
+                    flash.classList.remove('active');
+                }, 250);
+            },
+
+            checkAnswer: (selectedIdx, qData) => {
+                const isCorrect = selectedIdx === qData.ans;
+                
+                const feedback = document.getElementById('feedbackScreen');
+                const icon = document.getElementById('feedbackIcon');
+                const title = document.getElementById('feedbackTitle');
+                const msg = document.getElementById('feedbackMsg');
+
+                if (isCorrect) {
+                    sfx.play('correct');
+                    icon.innerHTML = '<i class="fa-solid fa-check-circle text-green-500"></i>';
+                    title.innerText = "TIMELINE STABLE";
+                    msg.innerText = qData.why;
+                    game.score += 2; // 2 points per question -> 100 total
+                } else {
+                    sfx.play('wrong');
+                    icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
+                    title.innerText = "PARADOX CREATED";
+                    msg.innerText = `Incorrect. ${qData.why}`;
+                    
+                    // Track Mistake
+                    game.mistakes.push({
+                        q: qData.q,
+                        correct: qData.opts[qData.ans],
+                        why: qData.why
+                    });
+                }
+
+                document.getElementById('scoreDisplay').innerText = game.score;
+                feedback.classList.remove('hidden');
+            },
+
+            nextQuestion: () => {
+                document.getElementById('feedbackScreen').classList.add('hidden');
+                game.qIndex++;
+                game.loadQuestion();
+            },
+
+            endGame: () => {
+                clearInterval(game.timerInterval);
+                document.getElementById('gameScreen').classList.add('hidden');
+                document.getElementById('endScreen').classList.remove('hidden');
+                
+                document.getElementById('endScore').innerText = `${game.score} / 100`;
+                document.getElementById('endTime').innerText = document.getElementById('timerDisplay').innerText;
+                
+                // Rank Logic
+                let rankTitle = "";
+                let rankDesc = "";
+                let rankColor = "";
+
+                if (game.score >= 90) {
+                    rankTitle = "TIME LORD";
+                    rankDesc = "Perfect temporal synchronization. You have mastered all tenses.";
+                    rankColor = "text-yellow-500";
+                } else if (game.score >= 70) {
+                    rankTitle = "SENIOR AGENT";
+                    rankDesc = "Excellent work. Only minor glitches detected in the timeline.";
+                    rankColor = "text-blue-500";
+                } else if (game.score >= 50) {
+                    rankTitle = "JUNIOR AGENT";
+                    rankDesc = "Mission acceptable, but the timeline is still fragile. Review continuous tenses.";
+                    rankColor = "text-orange-500";
+                } else {
+                    rankTitle = "ROOKIE";
+                    rankDesc = "Critical paradox detected! You must retrain at the academy immediately.";
+                    rankColor = "text-red-500";
+                }
+
+                const endRankEl = document.getElementById('endRank');
+                endRankEl.innerText = rankTitle;
+                endRankEl.className = `text-4xl font-bold mb-2 ${rankColor}`; // Apply color
+                
+                document.getElementById('endRankDesc').innerText = rankDesc; // Inject description
+                
+                // Render Mistakes
+                const mistakesContainer = document.getElementById('mistakesContainer');
+                const mistakesList = document.getElementById('mistakesList');
+                mistakesList.innerHTML = '';
+
+                if (game.mistakes.length > 0) {
+                    mistakesContainer.classList.remove('hidden');
+                    game.mistakes.forEach(m => {
+                        const li = document.createElement('li');
+                        li.className = "border-b border-current pb-2 last:border-0";
+                        li.innerHTML = `
+                            <div class="font-bold text-red-600 mb-1">${m.q}</div>
+                            <div class="opacity-80">Correct: <span class="font-bold border-b border-current">${m.correct}</span></div>
+                            <div class="text-xs italic mt-1 opacity-70">${m.why}</div>
+                        `;
+                        mistakesList.appendChild(li);
+                    });
+                } else {
+                    mistakesContainer.classList.add('hidden');
+                }
+                
+                // Set theme to present for readability
+                document.body.className = `theme-present flex flex-col items-center justify-center p-4`;
+            }
+        };
+
+    </script>
+</body>
+</html>
